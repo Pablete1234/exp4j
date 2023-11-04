@@ -67,8 +67,18 @@ public abstract class Function {
      *
      * @return the number of arguments
      */
+    @Deprecated
     public int getNumArguments() {
         return numArguments;
+    }
+
+    /**
+     * Check if a certain parameter count is acceptable for the function
+     *
+     * @return if such argument amount is valid
+     */
+    public boolean isValidArgCount(int count) {
+        return count == numArguments;
     }
 
     /**

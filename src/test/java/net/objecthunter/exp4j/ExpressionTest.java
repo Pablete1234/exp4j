@@ -45,7 +45,7 @@ public class ExpressionTest {
     public void testExpression2() {
         Token[] tokens = new Token[]{
                 new NumberToken(1d),
-                new FunctionToken(Functions.getBuiltinFunction("log")),
+                new FunctionToken(Functions.getBuiltinFunction("log"), 1),
         };
         Expression exp = new Expression(tokens);
         assertEquals(0d, exp.evaluate(), 0d);

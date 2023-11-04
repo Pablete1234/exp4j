@@ -167,7 +167,7 @@ public class Tokenizer {
                 final Function f = getFunction(name);
                 if (f != null) {
                     lastValidLen = len;
-                    lastValidToken = new FunctionToken(f);
+                    lastValidToken = new FunctionToken(f, -1);
                 }
             }
             len++;

@@ -19,13 +19,19 @@ import net.objecthunter.exp4j.function.Function;
 
 public class FunctionToken extends Token {
     private final Function function;
+    private final int paramCount;
 
-    public FunctionToken(final Function function) {
+    public FunctionToken(final Function function, final int paramCount) {
         super(Token.TOKEN_FUNCTION);
         this.function = function;
+        this.paramCount = paramCount;
     }
 
     public Function getFunction() {
         return function;
+    }
+
+    public int getParamCount() {
+        return paramCount;
     }
 }

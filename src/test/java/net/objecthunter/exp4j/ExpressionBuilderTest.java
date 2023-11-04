@@ -629,14 +629,11 @@ public class ExpressionBuilderTest {
     @Test
     public void testFunction20() {
         Function maxFunction = new Function("max", 3) {
-
             @Override
             public double apply(double... values) {
                 double max = values[0];
                 for (int i = 1; i < numArguments; i++) {
-                    if (values[i] > max) {
-                        max = values[i];
-                    }
+                    max = Math.max(max, values[i]);
                 }
                 return max;
             }
@@ -646,6 +643,29 @@ public class ExpressionBuilderTest {
         double calculated = b.build().evaluate();
         assertEquals(3, maxFunction.getNumArguments());
         assertEquals(3, calculated, 0.0);
+    }
+
+    // Test variable-length function
+    @Test
+    public void testFunction21() {
+        Function maxFunction = new Function("max") {
+            @Override
+            public double apply(double... values) {
+                double max = values[0];
+                for (int i = 1; i < values.length; i++) {
+                    max = Math.max(max, values[i]);
+                }
+                return max;
+            }
+
+            @Override
+            public boolean isValidArgCount(int count) {
+                return count >= 1;
+            }
+        };
+        ExpressionBuilder b = new ExpressionBuilder("max(1,2,3,4,5,6,7)").function(maxFunction);
+        double calculated = b.build().evaluate();
+        assertEquals(7, calculated, 0.0);
     }
 
     @Test

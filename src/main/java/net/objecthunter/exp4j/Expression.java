@@ -126,9 +126,10 @@ public class Expression {
                     count++;
                     break;
                 case Token.TOKEN_FUNCTION:
-                    final Function func = ((FunctionToken) tok).getFunction();
-                    final int argsNum = func.getNumArguments();
-                    if (argsNum > count) {
+                    final FunctionToken fnTok = (FunctionToken) tok;
+                    final Function func = fnTok.getFunction();
+                    final int argsNum = fnTok.getParamCount();
+                    if (argsNum > count || !func.isValidArgCount(argsNum)) {
                         errors.add("Not enough arguments for '" + func.getName() + "'");
                     }
                     if (argsNum > 1) {
@@ -194,8 +195,8 @@ public class Expression {
                 }
             } else if (t.getType() == Token.TOKEN_FUNCTION) {
                 FunctionToken func = (FunctionToken) t;
-                final int numArguments = func.getFunction().getNumArguments();
-                if (output.size() < numArguments) {
+                final int numArguments = func.getParamCount();
+                if (output.size() < numArguments || !func.getFunction().isValidArgCount(numArguments)) {
                     throw new IllegalArgumentException("Invalid number of arguments available for '" + func.getFunction().getName() + "' function");
                 }
                 /* collect the arguments from the stack */
