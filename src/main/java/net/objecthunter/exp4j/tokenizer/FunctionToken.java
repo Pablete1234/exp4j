@@ -19,9 +19,13 @@ import net.objecthunter.exp4j.function.Function;
 
 public class FunctionToken extends Token {
     private final Function function;
-    private final int paramCount;
+    private int paramCount;
 
-    public FunctionToken(final Function function, final int paramCount) {
+    public FunctionToken(final Function function) {
+        this(function, 0);
+    }
+
+    public FunctionToken(final Function function, int paramCount) {
         super(Token.TOKEN_FUNCTION);
         this.function = function;
         this.paramCount = paramCount;
@@ -33,5 +37,13 @@ public class FunctionToken extends Token {
 
     public int getParamCount() {
         return paramCount;
+    }
+
+    public void setParamCount(int val) {
+        this.paramCount = val;
+    }
+
+    public void incParamCount() {
+        this.paramCount++;
     }
 }

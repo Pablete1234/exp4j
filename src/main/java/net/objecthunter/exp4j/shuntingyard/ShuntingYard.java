@@ -42,7 +42,7 @@ public class ShuntingYard {
     public static Token[] convertToRPN(final String expression, final Map<String, Function> userFunctions,
                                        final Map<String, Operator> userOperators, final Set<String> variableNames, final boolean implicitMultiplication) {
         final Stack<Token> stack = new Stack<>();
-        final Stack<Integer> argCount = new Stack<>();
+        final Stack<FunctionToken> functionStack = new Stack<>();
         final List<Token> output = new ArrayList<>();
 
         final Tokenizer tokenizer = new Tokenizer(expression, userFunctions, userOperators, variableNames, implicitMultiplication);
@@ -52,24 +52,26 @@ public class ShuntingYard {
                 case Token.TOKEN_NUMBER:
                 case Token.TOKEN_VARIABLE:
                     output.add(token);
-                    if (!argCount.empty()) {
-                        argCount.push(Math.max(1, argCount.pop()));
+                    if (!functionStack.empty()) {
+                        functionStack.peek().setParamCount(Math.max(1, functionStack.peek().getParamCount()));
                     }
                     break;
                 case Token.TOKEN_FUNCTION:
-                    stack.add(token);
-                    if (!argCount.empty()) {
-                        argCount.push(Math.max(1, argCount.pop()));
+                    if (!functionStack.empty()) {
+                        functionStack.peek().setParamCount(Math.max(1, functionStack.peek().getParamCount()));
                     }
+                    functionStack.add((FunctionToken) token);
+                    stack.add(token);
                     break;
                 case Token.TOKEN_SEPARATOR:
+                    if (!functionStack.empty())
+                        functionStack.peek().incParamCount();
                     while (!stack.empty() && stack.peek().getType() != Token.TOKEN_PARENTHESES_OPEN) {
                         output.add(stack.pop());
                     }
                     if (stack.empty() || stack.peek().getType() != Token.TOKEN_PARENTHESES_OPEN) {
                         throw new IllegalArgumentException("Misplaced function separator ',' or mismatched parentheses");
                     }
-                    argCount.push(Math.max(2, argCount.pop() + 1));
                     break;
                 case Token.TOKEN_OPERATOR:
                     while (!stack.empty() && stack.peek().getType() == Token.TOKEN_OPERATOR) {
@@ -88,16 +90,15 @@ public class ShuntingYard {
                     break;
                 case Token.TOKEN_PARENTHESES_OPEN:
                     stack.push(token);
-                    argCount.push(0);
                     break;
                 case Token.TOKEN_PARENTHESES_CLOSE:
                     while (stack.peek().getType() != Token.TOKEN_PARENTHESES_OPEN) {
                         output.add(stack.pop());
                     }
                     stack.pop();
-                    int fnArgCount = argCount.pop();
                     if (!stack.isEmpty() && stack.peek().getType() == Token.TOKEN_FUNCTION) {
-                        output.add(new FunctionToken(((FunctionToken) stack.pop()).getFunction(), fnArgCount));
+                        functionStack.pop();
+                        output.add(stack.pop());
                     }
                     break;
                 default:
