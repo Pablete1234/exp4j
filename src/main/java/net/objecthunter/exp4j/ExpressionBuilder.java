@@ -20,6 +20,7 @@ import net.objecthunter.exp4j.function.Function;
 import net.objecthunter.exp4j.function.Functions;
 import net.objecthunter.exp4j.operator.Operator;
 import net.objecthunter.exp4j.shuntingyard.ShuntingYard;
+import net.objecthunter.exp4j.tokenizer.Token;
 
 import java.util.*;
 
@@ -36,6 +37,8 @@ public class ExpressionBuilder {
     private final Map<String, Operator> userOperators;
 
     private final Set<String> variableNames;
+
+    private ExpressionContext context;
 
     private boolean implicitMultiplication = true;
 
@@ -130,6 +133,20 @@ public class ExpressionBuilder {
     }
 
     /**
+     * Sets a context for the expression building & executing
+     * @param context the context to use
+     * @return the ExpressionBuilderInstance
+     */
+    public ExpressionBuilder context(ExpressionContext context) {
+        this.variableNames.clear();
+        this.variableNames.addAll(context.getVariables());
+        context.getFunctions().forEach(fn -> this.userFunctions.put(fn, context.getFunction(fn)));
+
+        this.context = context;
+        return this;
+    }
+
+    /**
      * Add an {@link net.objecthunter.exp4j.operator.Operator} which should be available for use in the expression
      *
      * @param operator the custom {@link net.objecthunter.exp4j.operator.Operator} to add
@@ -182,7 +199,7 @@ public class ExpressionBuilder {
      * @return an {@link Expression} instance which can be used to evaluate the result of the expression
      */
     public Expression build() {
-        if (expression.length() == 0) {
+        if (expression.isEmpty()) {
             throw new IllegalArgumentException("The expression can not be empty");
         }
 
@@ -199,8 +216,12 @@ public class ExpressionBuilder {
             }
         }
 
-        return new Expression(ShuntingYard.convertToRPN(this.expression, this.userFunctions, this.userOperators,
-                this.variableNames, this.implicitMultiplication), this.userFunctions.keySet());
+        Token[] rpn = ShuntingYard.convertToRPN(this.expression, this.userFunctions, this.userOperators, this.variableNames, this.implicitMultiplication);
+        if (context != null) {
+            return new Expression(rpn, context);
+        } else {
+            return new Expression(rpn, this.userFunctions.keySet());
+        }
     }
 
 }

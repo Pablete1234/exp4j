@@ -27,10 +27,7 @@ import java.util.concurrent.Future;
 public class Expression {
 
     private final Token[] tokens;
-
-    private final Map<String, Double> variables;
-
-    private final Set<String> userFunctionNames;
+    private ExpressionContext context;
 
     private static Map<String, Double> createDefaultVariables() {
         final Map<String, Double> vars = new HashMap<>(4);
@@ -48,44 +45,50 @@ public class Expression {
      */
     public Expression(final Expression existing) {
         this.tokens = Arrays.copyOf(existing.tokens, existing.tokens.length);
-        this.variables = new HashMap<>();
-        this.variables.putAll(existing.variables);
-        this.userFunctionNames = new HashSet<>(existing.userFunctionNames);
+        this.context = existing.context;
     }
 
     Expression(final Token[] tokens) {
         this.tokens = tokens;
-        this.variables = createDefaultVariables();
-        this.userFunctionNames = Collections.emptySet();
+        this.context = ExpressionContext.of(createDefaultVariables(), Collections.emptySet());
     }
 
     Expression(final Token[] tokens, Set<String> userFunctionNames) {
         this.tokens = tokens;
-        this.variables = createDefaultVariables();
-        this.userFunctionNames = userFunctionNames;
+        this.context = ExpressionContext.of(createDefaultVariables(), userFunctionNames);
+    }
+
+    Expression(final Token[] tokens, ExpressionContext context) {
+        this.tokens = tokens;
+        this.context = context;
     }
 
     public Expression setVariable(final String name, final double value) {
         this.checkVariableName(name);
-        this.variables.put(name, value);
+        if (!(context instanceof ExpressionContext.Impl))
+            throw new UnsupportedOperationException("Cannot call setVariable with a custom expression context");
+        ((ExpressionContext.Impl) this.context).setVariable(name, value);
         return this;
     }
 
     private void checkVariableName(String name) {
-        if (this.userFunctionNames.contains(name) || Functions.getBuiltinFunction(name) != null) {
+        if (this.context.getFunctions().contains(name) || Functions.getBuiltinFunction(name) != null) {
             throw new IllegalArgumentException("The variable name '" + name + "' is invalid. Since there exists a function with the same name");
         }
     }
 
+    public Expression setExpressionContext(ExpressionContext context) {
+        this.context = context;
+        return this;
+    }
+
     public Expression setVariables(Map<String, Double> variables) {
-        for (Map.Entry<String, Double> v : variables.entrySet()) {
-            this.setVariable(v.getKey(), v.getValue());
-        }
+        this.context = ExpressionContext.of(variables, context.getFunctions());
         return this;
     }
 
     public Expression clearVariables() {
-        this.variables.clear();
+        this.context = ExpressionContext.of(context.getVariables(), context.getFunctions());
         return this;
     }
 
@@ -105,7 +108,7 @@ public class Expression {
             for (final Token t : this.tokens) {
                 if (t.getType() == Token.TOKEN_VARIABLE) {
                     final String var = ((VariableToken) t).getName();
-                    if (!variables.containsKey(var)) {
+                    if (!context.getVariables().contains(var)) {
                         errors.add("The setVariable '" + var + "' has not been set");
                     }
                 }
@@ -173,7 +176,7 @@ public class Expression {
                 output.push(((NumberToken) t).getValue());
             } else if (t.getType() == Token.TOKEN_VARIABLE) {
                 final String name = ((VariableToken) t).getName();
-                final Double value = this.variables.get(name);
+                final Double value = this.context.getVariable(name);
                 if (value == null) {
                     throw new IllegalArgumentException("No value has been set for the setVariable '" + name + "'.");
                 }
@@ -204,7 +207,7 @@ public class Expression {
                 for (int j = numArguments - 1; j >= 0; j--) {
                     args[j] = output.pop();
                 }
-                output.push(func.getFunction().apply(args));
+                output.push(context.getFunction(func.getFunction()).apply(args));
             }
         }
         if (output.size() > 1) {
