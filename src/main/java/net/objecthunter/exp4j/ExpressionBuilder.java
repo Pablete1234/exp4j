@@ -133,7 +133,7 @@ public class ExpressionBuilder {
     }
 
     /**
-     * Sets a context for the expression building & executing
+     * Sets a context for the expression building &amp; executing
      * @param context the context to use
      * @return the ExpressionBuilderInstance
      */

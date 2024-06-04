@@ -75,6 +75,7 @@ public abstract class Function {
     /**
      * Check if a certain parameter count is acceptable for the function
      *
+     * @param count actual arguments found
      * @return if such argument amount is valid
      */
     public boolean isValidArgCount(int count) {
